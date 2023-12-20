@@ -24,6 +24,6 @@ jobs:
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
       run: |
         echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-        docker build -t your-image-name .
-        docker tag your-image-name $DOCKER_USERNAME/your-image-name:latest
-        docker push $DOCKER_USERNAME/your-image-name:latest
+        docker build -t wechat-daka-statistics .
+        docker tag wechat-daka-statistics $DOCKER_USERNAME/wechat-daka-statistics:latest
+        docker push $DOCKER_USERNAME/wechat-daka-statistics:latest
