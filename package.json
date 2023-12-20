@@ -1,0 +1,22 @@
+{
+  "name": "excel-to-json-converter",
+  "version": "1.0.0",
+  "description": "A simple Excel to JSON converter using Node.js",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": [
+    "excel",
+    "json",
+    "converter",
+    "node.js"
+  ],
+  "author": "KW",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.17.1",
+    "multer": "^1.4.5",
+    "xlsx": "^0.17.4"
+  }
+}
