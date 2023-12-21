@@ -70,12 +70,14 @@ function getSheetData(worksheet) {
 }
 
 function getWorkTimeDetail(workTimeList) {
-  // 过滤校准状态正常的数据
+  // 过滤 校准状态正常 & 打卡次数2次 的数据
   const checkedStatusField = '校准状态'
+  const timesField = '打卡次数(次)'
   const checkedWorkTimeList = workTimeList
     .filter(item => {
-      return item[checkedStatusField] === '正常'
+      return item[checkedStatusField] === '正常' && Number(item[timesField]) === 2
     })
+
   // 标准工作时长 name
   const standardWorkTimeField = '标准工作时长(小时)'
   const standardWorkTimeDaily = checkedWorkTimeList[0] ? Number(checkedWorkTimeList[0][standardWorkTimeField]) : 9 // 默认时长
