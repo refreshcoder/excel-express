@@ -48,13 +48,20 @@
   </head>
   <body>
     <h2 style="text-align: center;">工作时间统计</h2>
+
     <div
       id="drop-area"
       style="border: 2px dashed #ccc; padding: 20px; text-align: center"
     >
       <p>Drag & Drop your Excel file here or click to browse.</p>
-      <i id="filename">上下班打卡_日报_XXXXXXXX-XXXXXXXX.xlsx</i>
+      <p><i id="filename">上下班打卡_日报_XXXXXXXX-XXXXXXXX.xlsx</i></p>
       <input type="file" id="fileInput" style="display: none" />
+    </div>
+
+    <div style="text-align: center;">
+      <p>
+        统计范围：校准状态为正常，打卡次数为2次的天数
+      </p>
     </div>
 
     <div id="result" style="margin-top: 20px"></div>

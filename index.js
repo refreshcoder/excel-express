@@ -2,6 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const xlsx = require('xlsx');
 const path = require('path');
+const schedule = require('node-schedule');
 
 const app = express();
 const port = 3300;
@@ -112,7 +113,29 @@ function getWorkTimeDetail(workTimeList) {
   }
 }
 
-// 启动Express服务器
-app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
+// 定时重启
+schedule.scheduleJob('5 0 * * *', () => {
+  console.log('Daily restart job running...');
+  restartExpressApp();
 });
+
+function restartExpressApp() {
+  console.log('Gracefully shutting down Express app...');
+  // Close the server
+  server.close(() => {
+    console.log('Express app closed. Restarting...');
+    
+    // Restart the Express app
+    startExpressApp();
+  });
+}
+
+function startExpressApp() {
+  // Start the server
+  server = app.listen(port, () => {
+    console.log(`Express app is running on http://localhost:${port}`);
+  });
+}
+
+let server;
+startExpressApp();
