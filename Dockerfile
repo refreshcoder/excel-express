@@ -11,7 +11,7 @@ COPY package*.json ./
 RUN npm install
 
 # 复制应用程序的所有文件到工作目录
-COPY . .
+COPY . /app
 
 # 第二阶段：创建最终镜像
 FROM node:18-alpine
