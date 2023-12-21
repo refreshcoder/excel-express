@@ -17,7 +17,7 @@ COPY . .
 # RUN npm run build
 
 # 第二阶段：创建最终镜像
-FROM node:18-alpine
+FROM node:18
 
 # 设置工作目录
 WORKDIR /app
