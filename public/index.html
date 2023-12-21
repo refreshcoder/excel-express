@@ -53,6 +53,7 @@
       style="border: 2px dashed #ccc; padding: 20px; text-align: center"
     >
       <p>Drag & Drop your Excel file here or click to browse.</p>
+      <i id="filename">上下班打卡_日报_XXXXXXXX-XXXXXXXX.xlsx</i>
       <input type="file" id="fileInput" style="display: none" />
     </div>
 
@@ -96,6 +97,11 @@
           handleFiles(files);
         }
 
+        const filenameText = document.getElementById('filename');
+        function setFilenameText(filename) {
+          filenameText.innerHTML = filename
+        }
+
         function handleFiles(files) {
           const file = files[0];
 
@@ -103,6 +109,8 @@
             file.type ===
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
           ) {
+            setFilenameText(file.name || '')
+
             const formData = new FormData();
             formData.append('excelFile', file);
 
