@@ -20,7 +20,7 @@ FROM node:18-alpine
 WORKDIR /app
 
 # 从第一阶段拷贝构建好的应用程序
-COPY --from=builder /app .
+COPY --from=build /app .
 
 # 暴露应用程序运行的端口（根据你的Express应用程序配置）
 EXPOSE 3300
