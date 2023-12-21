@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel Upload Page</title>
+</head>
+<body>
+    <div id="drop-area" style="border: 2px dashed #ccc; padding: 20px; text-align: center;">
+        <p>Drag & Drop your Excel file here or click to browse.</p>
+        <input type="file" id="fileInput" style="display: none;">
+    </div>
+
+    <div id="result" style="margin-top: 20px;"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const dropArea = document.getElementById('drop-area');
+
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropArea.addEventListener(eventName, highlight, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, unhighlight, false);
+            });
+
+            function highlight() {
+                dropArea.style.background = '#e1e7f0';
+            }
+
+            function unhighlight() {
+                dropArea.style.background = '';
+            }
+
+            dropArea.addEventListener('drop', handleDrop, false);
+
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+
+                handleFiles(files);
+            }
+
+            function handleFiles(files) {
+                const file = files[0];
+
+                if (file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
+                    const formData = new FormData();
+                    formData.append('excelFile', file);
+
+                    fetch('/workInfo', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Received data:', data);
+                        // Handle the response data as needed
+                        displayResult(data);
+                    })
+                    .catch(error => {
+                        console.error('Error uploading file:', error);
+                    });
+                } else {
+                    alert('Please upload a valid Excel file.');
+                }
+            }
+
+            function displayResult(data) {
+                const resultDiv = document.getElementById('result');
+                resultDiv.innerHTML = ''; // Clear previous results
+
+                const ul = document.createElement('ul');
+                for (const [key, value] of Object.entries(data)) {
+                    const li = document.createElement('li');
+                    li.textContent = `${key}: ${value}`;
+                    ul.appendChild(li);
+                }
+
+                resultDiv.appendChild(ul);
+            }
+
+            const fileInput = document.getElementById('fileInput');
+            dropArea.addEventListener('click', () => fileInput.click(), false);
+            fileInput.addEventListener('change', () => handleFiles(fileInput.files), false);
+        });
+    </script>
+</body>
+</html>

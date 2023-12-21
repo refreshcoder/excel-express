@@ -1,6 +1,7 @@
 const express = require('express');
 const multer = require('multer');
 const xlsx = require('xlsx');
+const path = require('path');
 
 const app = express();
 const port = 3300;
@@ -8,6 +9,8 @@ const port = 3300;
 // 设置Multer中间件，用于处理文件上传
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
+
+app.use('/work', express.static(path.join(__dirname, 'public')));
 
 // 设置路由处理文件上传
 app.post('/workInfo', upload.single('excelFile'), (req, res) => {
