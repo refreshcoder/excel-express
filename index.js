@@ -103,7 +103,7 @@ function getWorkTimeDetail(workTimeList) {
 
   return {
     '工作天数': workDays,
-    [standardWorkTimeField]: standardWorkTimeDaily,
+    [`每日${standardWorkTimeField}`]: standardWorkTimeDaily,
     [`平均${workTimeField}`]: workTimeDaily,
     [`累计${standardWorkTimeField}`]: standardWorkTimeTotal,
     [`累计${workTimeField}`]: workTimeTotal
