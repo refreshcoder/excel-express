@@ -26,16 +26,26 @@ app.post('/workInfo', upload.single('excelFile'), (req, res) => {
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
 
+    // 过滤
+    const filters = convertFilters(JSON.parse((req.body.filters)))
+
     const sheetData = getSheetData(worksheet)
-    const workTimeDetail = getWorkTimeDetail(sheetData)
+    const workTimeDetailAfterFilter = getWorkTimeDetail(sheetData, filters)
 
     // 发送JSON数据作为响应
-    res.json(workTimeDetail);
+    res.json(workTimeDetailAfterFilter);
   } catch (error) {
     console.error(error);
     res.status(500).send('Error processing the Excel file.');
   }
 });
+
+const dateField= '时间'
+const dutyField = '班次'
+const timesField = '打卡次数(次)'
+const checkedStatusField = '校准状态'
+const standardWorkTimeField = '标准工作时长(小时)'
+const workTimeField = '实际工作时长(小时)'
 
 // 合并前两行的数据
 function mergeRows(row1, row2) {
@@ -70,46 +80,102 @@ function getSheetData(worksheet) {
   return jsonData
 }
 
-function getWorkTimeDetail(workTimeList) {
-  // 过滤 校准状态正常 & 打卡次数2次 的数据
-  const checkedStatusField = '校准状态'
-  const timesField = '打卡次数(次)'
-  const checkedWorkTimeList = workTimeList
-    .filter(item => {
-      return item[checkedStatusField] === '正常' && Number(item[timesField]) === 2
-    })
+function convertFilters({ duty, checkedStatus, times }) {
+  const filters = {
+    [dutyField]: undefined,
+    [checkedStatusField]: undefined,
+    [timesField]: undefined,
+  }
+
+  if (duty) {
+    switch (duty) {
+      case '非休息':
+        filters[dutyField] = (t) => t !== '休息'
+        break;
+      default:
+        break;
+    }
+  }
+
+  if (checkedStatus) {
+    switch (checkedStatus) {
+      case '正常':
+        filters[checkedStatusField] = (t) => t === '正常'
+        break;
+      case '非请假休息':
+        filters[checkedStatusField] = (t) => !t.includes('请假') && !t.includes('休息')
+        break;
+      default:
+        break;
+    }
+  }
+
+
+  if (times) {
+    switch (times) {
+      case '2':
+        filters[timesField] = (t) => t === 2
+        break;
+      default:
+        break;
+    }
+  }
+
+  return filters;
+}
+
+function filterItemWithFilters(item, filters) {
+  return Object.keys(filters).every(field => {
+    const filter = filters[field]
+    return filter ? filter(item[field]) : true
+  })
+}
+
+function getWorkTimeDetail(workTimeList, filters) {
+  // 过滤数据
+  const checkedWorkTimeList = workTimeList.filter(item => {
+    return filterItemWithFilters(item, filters)
+  })
 
   // 标准工作时长 name
-  const standardWorkTimeField = '标准工作时长(小时)'
+
   const standardWorkTimeDaily = checkedWorkTimeList[0] ? Number(checkedWorkTimeList[0][standardWorkTimeField]) : 9 // 默认时长
 
   // 实际工作时长 name
-  const workTimeField = '实际工作时长(小时)'
+
 
   const workDays = checkedWorkTimeList.length
 
   const standardWorkTimeTotal = standardWorkTimeDaily * workDays
 
-  const workTimeTotal = Number(
-    checkedWorkTimeList.map(item => {
-      const numberfyWorkTime = Number(item[workTimeField])
-      return !Number.isNaN(numberfyWorkTime) ? numberfyWorkTime : 0
+
+  const workDateList = checkedWorkTimeList.map(item => {
+    const numberfyWorkTime = Number(item[workTimeField])
+    const defaultWorkTime = item[timesField] === 2 ? 0 : standardWorkTimeDaily
+    return {
+      date: item[dateField],
+      time: !Number.isNaN(numberfyWorkTime) ? numberfyWorkTime : defaultWorkTime
     }
-    )
-      .reduce((pre, cur) => {
-        return pre + cur
-      },
-        0
-      ).toFixed(2))
+  })
+  const workTimeTotal = Number(
+    workDateList.map(item => item.time).reduce((pre, cur) => {
+      return pre + cur
+    },
+      0
+    ).toFixed(2))
 
   const workTimeDaily = Number((workTimeTotal / workDays).toFixed(2))
+
+  const overWorkTime = Number((workTimeTotal - standardWorkTimeTotal).toFixed(2))
 
   return {
     '工作天数': workDays,
     [`每日${standardWorkTimeField}`]: standardWorkTimeDaily,
     [`平均${workTimeField}`]: workTimeDaily,
+    [`每日${workTimeField}`]: workDateList.map(item => `${item.date} ${item.time}小时`).join(', '),
     [`累计${standardWorkTimeField}`]: standardWorkTimeTotal,
-    [`累计${workTimeField}`]: workTimeTotal
+    [`累计${workTimeField}`]: workTimeTotal,
+    [`累计${workTimeField}差额`]: overWorkTime
   }
 }
 
@@ -124,7 +190,7 @@ function restartExpressApp() {
   // Close the server
   server.close(() => {
     console.log('Express app closed. Restarting...');
-    
+
     // Restart the Express app
     startExpressApp();
   });
@@ -133,7 +199,7 @@ function restartExpressApp() {
 function startExpressApp() {
   // Start the server
   server = app.listen(port, () => {
-    console.log(`Express app is running on http://localhost:${port}`);
+    console.log(`Express app is running on http://localhost:${port}, index page: http://localhost:${port}/work`);
   });
 }
 
