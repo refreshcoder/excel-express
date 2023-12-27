@@ -24,7 +24,7 @@
         text-align: center;
       }
 
-      .form-item{
+      .form-item {
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -94,6 +94,16 @@
   </head>
   <body>
     <h2 style="text-align: center">工作时长统计</h2>
+
+    <div
+      id="drop-area"
+      style="border: 2px dashed #ccc; padding: 20px; text-align: center"
+    >
+      <p> 拖拽Excel文件到此 </p>
+      <p><i id="filename">上下班打卡_日报_XXXXXXXX-XXXXXXXX.xlsx</i></p>
+      <input type="file" id="fileInput" style="display: none" />
+    </div>
+
     <!-- 配置表单 -->
     <form id="filterForm">
       <div class="form-item">
@@ -104,7 +114,6 @@
           <!-- 添加其他班次选项 -->
         </select>
       </div>
-
       <div class="form-item">
         <label for="checkedStatus">校准状态：</label>
         <select id="checkedStatus" name="checkedStatus">
@@ -114,7 +123,6 @@
           <!-- 添加其他校准状态选项 -->
         </select>
       </div>
-
       <div class="form-item">
         <label for="times">打卡次数：</label>
         <select id="times" name="times">
@@ -123,67 +131,15 @@
           <!-- 添加其他打卡次数选项 -->
         </select>
       </div>
-
       <button id="filter-save" type="button">应用筛选</button>
     </form>
-
-    <div
-      id="drop-area"
-      style="border: 2px dashed #ccc; padding: 20px; text-align: center"
-    >
-      <p>Drag & Drop your Excel file here or click to browse.</p>
-      <p><i id="filename">上下班打卡_日报_XXXXXXXX-XXXXXXXX.xlsx</i></p>
-      <input type="file" id="fileInput" style="display: none" />
-    </div>
 
     <div id="result" style="margin-top: 20px"></div>
 
     <script>
       document.addEventListener('DOMContentLoaded', () => {
-        // filters formm
-        const filterStorageKey = '__clockin__filters';
-        function setFilters(data) {
-          const { duty, checkedStatus, times } = data;
-          localStorage.setItem(
-            filterStorageKey,
-            JSON.stringify({
-              duty,
-              checkedStatus,
-              times,
-            })
-          );
-        }
-        function getFilters() {
-          const storageData = localStorage.getItem(filterStorageKey)
-          if(!storageData){
-            setFilters({ duty: '非休息', checkedStatus: '正常', times: '2' })
-            return JSON.parse(localStorage.getItem(filterStorageKey))
-          }else{
-            return JSON.parse(storageData)
-          }
-        }
-        function applyFilters() {
-          // 获取表单值
-          const duty = document.getElementById('duty').value;
-          const checkedStatus = document.getElementById('checkedStatus').value;
-          const times = document.getElementById('times').value;
-          // 使用配置项
-          setFilters({ duty, checkedStatus, times });
-        }
-        function applyFiltersToPage() {
-          const filters = getFilters();
-          document.getElementById('duty').value = filters.duty || '';
-          document.getElementById('checkedStatus').value =
-            filters.checkedStatus || '';
-          document.getElementById('times').value = filters.times || '';
-        }
-
-        const filterBtn = document.getElementById('filter-save');
-        filterBtn.addEventListener('click', applyFilters, false);
-
-        applyFiltersToPage();
-
         const dropArea = document.getElementById('drop-area');
+        const fileInput = document.getElementById('fileInput');
 
         ['dragenter', 'dragover', 'dragleave', 'drop'].forEach((eventName) => {
           dropArea.addEventListener(eventName, preventDefaults, false);
@@ -215,6 +171,7 @@
         function handleDrop(e) {
           const dt = e.dataTransfer;
           const files = dt.files;
+          fileInput.files = files;
 
           handleFiles(files);
         }
@@ -271,13 +228,58 @@
           resultDiv.appendChild(ul);
         }
 
-        const fileInput = document.getElementById('fileInput');
         dropArea.addEventListener('click', () => fileInput.click(), false);
         fileInput.addEventListener(
-          'change',
+          'input',
           () => handleFiles(fileInput.files),
           false
         );
+
+        // filters formm
+        const filterStorageKey = '__clockin__filters';
+        function setFilters(data) {
+          const { duty, checkedStatus, times } = data;
+          localStorage.setItem(
+            filterStorageKey,
+            JSON.stringify({
+              duty,
+              checkedStatus,
+              times,
+            })
+          );
+        }
+        function getFilters() {
+          const storageData = localStorage.getItem(filterStorageKey);
+          if (!storageData) {
+            setFilters({ duty: '非休息', checkedStatus: '正常', times: '2' });
+            return JSON.parse(localStorage.getItem(filterStorageKey));
+          } else {
+            return JSON.parse(storageData);
+          }
+        }
+        function applyFilters() {
+          // 获取表单值
+          const duty = document.getElementById('duty').value;
+          const checkedStatus = document.getElementById('checkedStatus').value;
+          const times = document.getElementById('times').value;
+          // 使用配置项
+          setFilters({ duty, checkedStatus, times });
+          if (fileInput.files.length > 0) {
+            handleFiles(fileInput.files)
+          }
+        }
+        function applyFiltersToPage() {
+          const filters = getFilters();
+          document.getElementById('duty').value = filters.duty || '';
+          document.getElementById('checkedStatus').value =
+            filters.checkedStatus || '';
+          document.getElementById('times').value = filters.times || '';
+        }
+
+        const filterBtn = document.getElementById('filter-save');
+        filterBtn.addEventListener('click', applyFilters, false);
+
+        applyFiltersToPage();
       });
     </script>
   </body>
