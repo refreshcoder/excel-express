@@ -1,5 +1,5 @@
 <template>
-  <div class="calendar-container" @dblclick="() => showDetail = !showDetail">
+  <div class="calendar-container" @click="() => showDetail = !showDetail">
     <div v-if="calendarData.length" class="calendar-weekday">
       <div class="calendar-day" v-for="(weekday, index) in weekDays" :key="index">
         <div class="calendar-date">{{ weekday.replace('星期', '') }}</div>
