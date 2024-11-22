@@ -19,6 +19,8 @@ declare module 'vue' {
     AListItemExtra: typeof import('@arco-design/web-vue')['ListItemExtra']
     AListItemMeta: typeof import('@arco-design/web-vue')['ListItemMeta']
     ASelect: typeof import('@arco-design/web-vue')['Select']
+    ASpace: typeof import('@arco-design/web-vue')['Space']
+    ATypographyText: typeof import('@arco-design/web-vue')['TypographyText']
     ATypographyTitle: typeof import('@arco-design/web-vue')['TypographyTitle']
     AUpload: typeof import('@arco-design/web-vue')['Upload']
     Calender: typeof import('./src/components/Calender.vue')['default']

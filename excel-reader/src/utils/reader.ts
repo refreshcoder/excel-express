@@ -108,19 +108,21 @@ function getWorkTimeDetail(
   const standardWorkTimeTotal = standardWorkTimeDaily * workDays;
 
   const workDateList = checkedWorkTimeList.map((item) => {
-    const numberfyWorkTime = Number(item[workTimeField]);
     const defaultWorkTime = item[timesField] === 2 ? 0 : standardWorkTimeDaily;
+    const numberfyWorkTime = Number(item[workTimeField]);
+    const realWorkTime = !Number.isNaN(numberfyWorkTime)
+      ? numberfyWorkTime
+      : defaultWorkTime;
     return {
       date: item[dateField],
-      time: !Number.isNaN(numberfyWorkTime)
-        ? numberfyWorkTime
-        : defaultWorkTime,
+      hours: realWorkTime,
+      diffHours: realWorkTime - standardWorkTimeDaily,
     };
   });
 
   const workTimeTotal = Number(
     workDateList
-      .map((item) => item.time)
+      .map((item) => item.hours)
       .reduce((pre, cur) => pre + cur, 0)
       .toFixed(2)
   );
@@ -131,7 +133,7 @@ function getWorkTimeDetail(
   );
 
   return {
-    weeks: workDateList.map((item) => `${item.date} ${item.time}`).reverse(),
+    weeks: workDateList.reverse(),
     detail: {
       工作天数: workDays,
       [`每日${standardWorkTimeField}`]: standardWorkTimeDaily,
@@ -144,7 +146,11 @@ function getWorkTimeDetail(
 }
 
 export interface ParseRes {
-  weeks: string[];
+  weeks: {
+    date: any;
+    hours: number;
+    diffHours: number;
+  }[];
   detail: Record<string, any>;
 }
 

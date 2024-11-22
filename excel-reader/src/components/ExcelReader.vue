@@ -6,7 +6,7 @@
       </a-typography-title>
     </a-layout-header>
 
-    <a-layout-content style="padding: 24px">
+    <a-layout-content style="margin: 0 24px 24px;">
       <div>
         <a-upload
           ref="aUploadRef"
@@ -26,7 +26,7 @@
         :model="filters"
         label-align="left"
         label-col="{ span: 6 }"
-        style="margin-top: 16px"
+        style="margin-top: 20px"
       >
         <a-form-item label="班次">
           <a-select v-model="filters.duty" :options="dutyOptions" />
@@ -42,7 +42,7 @@
       </a-form>
 
       <div style="display: flex; justify-content: space-between">
-        <a-button style="margin-left: 8px" @click="resetFilters">重置</a-button>
+        <a-button @click="resetFilters">重置</a-button>
 
         <a-button
           type="primary"
@@ -53,17 +53,19 @@
         </a-button>
       </div>
 
-      <a-list style="margin-top: 16px" size="small">
+      <a-list style="margin-top: 20px" size="small">
         <template #header>
-          <div style="text-align: center">统计结果</div>
-          <SCalender :data="resultWeeks" />
+          <div style="text-align: center; margin-bottom: 8px;">统计结果</div>
+          <SCalender style="margin-bottom: 12px;" :data="resultWeeks" />
         </template>
         <a-list-item v-for="(item, index) in resultList" :key="index">
           <a-list-item-meta
             :title="item.label"
           />
           <template #extra>
-            {{ item.value.toString() }}
+            <a-space style="height: 100%;" align="center">
+              {{ item.value.toString() }}
+            </a-space>
           </template>
         </a-list-item>
       </a-list>

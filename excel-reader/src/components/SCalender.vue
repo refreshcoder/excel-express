@@ -1,6 +1,6 @@
 <template>
-  <div class="calendar-container">
-    <div v-if="calendarData.length" class="calendar-weekdays">
+  <div class="calendar-container" @dblclick="() => showDetail = !showDetail">
+    <div v-if="calendarData.length" class="calendar-weekday">
       <div class="calendar-day" v-for="(weekday, index) in weekDays" :key="index">
         <div class="calendar-date">{{ weekday.replace('星期', '') }}</div>
       </div>
@@ -11,9 +11,13 @@
       class="calendar-week"
     >
       <div v-for="(day, dayIndex) in week" :key="dayIndex" class="calendar-day">
-        <div v-if="day.hours">
+        <div v-if="day.hours >= 0">
           <div class="calendar-date">{{ day.date.replace(/\w+\//, '') }}</div>
-          <div class="calendar-hours">{{ day.hours }}</div>
+          <div class="calendar-hours">
+            <a-typography-text :type="(day.diffHours > 0 ? 'success' : (day.diffHours < 0 ? 'danger' : 'secondary'))">
+              {{ (showDetail ? day.diffHours : day.hours).toFixed(1) }}
+            </a-typography-text>
+          </div>
         </div>
         <div v-else>
           <div class="calendar-placeholder"></div>
@@ -24,22 +28,26 @@
 </template>
 
 <script setup lang="ts">
-import { computed, type PropType } from "vue";
+import type { ParseRes } from "@/utils/reader";
+import { computed, ref, type PropType } from "vue";
 
 const props = defineProps({
-  data: { type: Array as PropType<string[]> ,default: ()=> []},
+  data: { type: Array as PropType<ParseRes["weeks"]> ,default: ()=> []},
 });
 
 const parsedData = computed(() => {
   return props.data.map((item) => {
-    const [date, weekday, hours] = item.split(" ");
+    const [date, weekday] = item.date.split(" ");
     return {
       date,
       weekday,
-      hours: hours.replace('小时', ''),
+      hours: item.hours,
+      diffHours: item.diffHours,
     };
   });
 });
+
+type Item = typeof parsedData.value[0]
 
 const weekDays = ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期天"];
 
@@ -66,19 +74,17 @@ const calendarData = computed(() => {
   };
 
   // 转换源数据为 Map，用于快速查找
-  const dateMap = new Map<string, { date: string; hours: string; weekday: string }>();
+  const dateMap = new Map<string, Item>();
   parsedData.value.forEach((item) => {
     dateMap.set(item.date, item);
   });
 
   // 找到第一天和最后一天的日期
   const firstDate = new Date(parsedData.value[0].date);
-  console.log(firstDate)
   const lastDate = new Date(parsedData.value[parsedData.value.length - 1].date);
 
   // 计算起点（第一周的星期一）和终点（最后一周的星期天）
   const startDate = getMonday(firstDate);
-  console.log(startDate)
   const endDate = getSunday(lastDate);
 
   // 生成从起点到终点的完整日期范围
@@ -99,18 +105,20 @@ const calendarData = computed(() => {
       const original = dateMap.get(date.date)!;
       return { ...original };
     } else {
-      return { date: date.date, hours: "", weekday: date.weekday };
+      return { date: date.date, hours: -1, diffHours: 0, weekday: date.weekday };
     }
   });
 
   // 按每 7 天分组为周
-  const weeks: Array<{ date: string; hours: string; weekday: string }[]> = [];
+  const weeks: Array<Item[]> = [];
   for (let i = 0; i < filledData.length; i += 7) {
     weeks.push(filledData.slice(i, i + 7));
   }
 
   return weeks;
 });
+
+const showDetail = ref(false)
 </script>
 
 <style scoped>
@@ -118,21 +126,36 @@ const calendarData = computed(() => {
   display: flex;
   flex-direction: column;
   font-size: 12px;
+  user-select: none;
 }
 
-.calendar-weekdays,.calendar-week {
+.calendar-weekday,.calendar-week {
   display: flex;
 }
 
 .calendar-day {
   flex: 1;
   text-align: center;
-  border: 1px solid #ddd;
+  border-bottom: 1px solid #ddd;
   width: calc(100% / 7);
   padding: 8px 0;
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+.calendar-weekday > .calendar-day{
+  border-top: 1px solid #ddd;
+}
+
+.calendar-weekday > .calendar-day:first-child,
+.calendar-week > .calendar-day:first-child {
+  border-left: 1px solid #ddd;
+}
+
+.calendar-weekday > .calendar-day,
+.calendar-week > .calendar-day {
+  border-right: 1px solid #ddd;
 }
 
 .calendar-date {
@@ -141,6 +164,14 @@ const calendarData = computed(() => {
 
 .calendar-hours {
   color: #555;
+}
+
+.calendar-hours.up {
+  color: var(--success-6);
+}
+
+.calendar-hours.down {
+  color: var(--danger-6);
 }
 
 .calendar-placeholder {
