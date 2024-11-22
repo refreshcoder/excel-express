@@ -6,7 +6,7 @@
       </a-typography-title>
     </a-layout-header>
 
-    <a-layout-content style="margin: 0 24px 24px;">
+    <a-layout-content style="margin: 0 24px; padding-bottom: 24px;">
       <div>
         <a-upload
           ref="aUploadRef"
