@@ -2,7 +2,7 @@
   <div class="calendar-container">
     <div v-if="calendarData.length" class="calendar-weekdays">
       <div class="calendar-day" v-for="(weekday, index) in weekDays" :key="index">
-        <div class="calendar-date">{{ weekday }}</div>
+        <div class="calendar-date">{{ weekday.replace('星期', '') }}</div>
       </div>
     </div>
     <div
@@ -13,7 +13,7 @@
       <div v-for="(day, dayIndex) in week" :key="dayIndex" class="calendar-day">
         <div v-if="day.hours">
           <div class="calendar-date">{{ day.date.replace(/\w+\//, '') }}</div>
-          <div class="calendar-hours">{{ day.hours }} 小时</div>
+          <div class="calendar-hours">{{ day.hours }}</div>
         </div>
         <div v-else>
           <div class="calendar-placeholder"></div>
@@ -128,7 +128,11 @@ const calendarData = computed(() => {
   flex: 1;
   text-align: center;
   border: 1px solid #ddd;
-  padding: 10px;
+  width: calc(100% / 7);
+  padding: 8px 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .calendar-date {

@@ -1,5 +1,5 @@
 <template>
-  <a-layout style="height: 100vh">
+  <a-layout style="height: 100vh; max-width: 960px; margin: 0 auto;">
     <a-layout-header>
       <a-typography-title style="text-align: center" :heading="4">
         工作时长统计
@@ -9,13 +9,14 @@
     <a-layout-content style="padding: 24px">
       <div>
         <a-upload
+          ref="aUploadRef"
           :file-list="fileList"
-          accept=".xlsx"
           :auto-upload="false"
           @change="onFileChange"
+          accept=".xls,.xlsx,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
           show-upload-list
-          draggable
           :limit="1"
+          draggable
         >
           <a-button icon="upload">上传文件</a-button>
         </a-upload>
@@ -52,18 +53,20 @@
         </a-button>
       </div>
 
-      <a-list style="margin-top: 16px">
+      <a-list style="margin-top: 16px" size="small">
         <template #header>
           <div style="text-align: center">统计结果</div>
+          <SCalender :data="resultWeeks" />
         </template>
         <a-list-item v-for="(item, index) in resultList" :key="index">
           <a-list-item-meta
             :title="item.label"
-            :description="item.value.toString()"
           />
+          <template #extra>
+            {{ item.value.toString() }}
+          </template>
         </a-list-item>
       </a-list>
-      <SCalender :data="resultWeeks" />
     </a-layout-content>
   </a-layout>
 </template>
@@ -73,6 +76,7 @@ import { parseExcelFile, type ParseRes } from "@/utils/reader";
 import { computed, ref } from "vue";
 import SCalender from "./SCalender.vue";
 import { useLocalStorage } from "@vueuse/core";
+import type { FileItem } from "@arco-design/web-vue";
 
 // 文件和数据
 const fileList = ref<any[]>([]); // arco-design-vue 文件列表
@@ -110,7 +114,7 @@ const timesOptions = [
 ];
 
 // 上传文件逻辑
-const onFileChange = (files: File[]) => {
+const onFileChange = (files: FileItem[]) => {
   fileList.value = [...files];
 };
 
@@ -138,6 +142,10 @@ const resetFilters = () => {
 </script>
 
 <style scoped>
+:deep(.arco-upload-drag) {
+  padding: 16px 0;
+}
+
 :deep(.arco-upload-progress) {
   display: none;
 }

@@ -16,6 +16,7 @@ declare module 'vue' {
     ALayoutHeader: typeof import('@arco-design/web-vue')['LayoutHeader']
     AList: typeof import('@arco-design/web-vue')['List']
     AListItem: typeof import('@arco-design/web-vue')['ListItem']
+    AListItemExtra: typeof import('@arco-design/web-vue')['ListItemExtra']
     AListItemMeta: typeof import('@arco-design/web-vue')['ListItemMeta']
     ASelect: typeof import('@arco-design/web-vue')['Select']
     ATypographyTitle: typeof import('@arco-design/web-vue')['TypographyTitle']
