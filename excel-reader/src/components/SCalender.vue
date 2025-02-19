@@ -1,5 +1,16 @@
 <template>
-  <div class="calendar-container" @click="() => showDetail = !showDetail">
+  <div class="calendar-container">
+    <div v-if="calendarData.length" class="calendar-tools">
+      <a-button size="mini" @click="refresh"><icon-sync /></a-button>
+      <a-switch type="round" v-model="showDetail">
+        <template #checked>
+          差值
+        </template>
+        <template #unchecked>
+          时间
+        </template>
+      </a-switch>
+    </div>
     <div v-if="calendarData.length" class="calendar-weekday">
       <div class="calendar-day" v-for="(weekday, index) in weekDays" :key="index">
         <div class="calendar-date">{{ weekday.replace('星期', '') }}</div>
@@ -10,7 +21,13 @@
       :key="weekIndex"
       class="calendar-week"
     >
-      <div v-for="(day, dayIndex) in week" :key="dayIndex" class="calendar-day">
+      <div 
+        v-for="(day, dayIndex) in week" 
+        :key="dayIndex" 
+        class="calendar-day" 
+        :class="{ 'is-disabled-day': isIndexDisabled(day.id) }" 
+        @click="() => toggleDisabledIndex(day.id)"
+      >
         <div v-if="day.hours >= 0">
           <div class="calendar-date">{{ day.date.replace(/\w+\//, '') }}</div>
           <div class="calendar-hours">
@@ -20,7 +37,10 @@
           </div>
         </div>
         <div v-else>
-          <div class="calendar-placeholder"></div>
+          <div class="calendar-placeholder">
+            <div class="calendar-date">&nbsp;</div>
+            <div class="calendar-hours">&nbsp;</div>
+          </div>
         </div>
       </div>
     </div>
@@ -28,17 +48,20 @@
 </template>
 
 <script setup lang="ts">
-import type { ParseRes } from "@/utils/reader";
+import type { WorkDate } from "@/utils/reader";
 import { computed, ref, type PropType } from "vue";
+import { IconSync } from '@arco-design/web-vue/es/icon';
+
 
 const props = defineProps({
-  data: { type: Array as PropType<ParseRes["weeks"]> ,default: ()=> []},
+  data: { type: Array as PropType<WorkDate[]> ,default: ()=> []},
 });
 
 const parsedData = computed(() => {
   return props.data.map((item) => {
     const [date, weekday] = item.date.split(" ");
     return {
+      id: item.id,
       date,
       weekday,
       hours: item.hours,
@@ -105,7 +128,7 @@ const calendarData = computed(() => {
       const original = dateMap.get(date.date)!;
       return { ...original };
     } else {
-      return { date: date.date, hours: -1, diffHours: 0, weekday: date.weekday };
+      return { id: '', date: date.date, hours: -1, diffHours: 0, weekday: date.weekday };
     }
   });
 
@@ -119,6 +142,26 @@ const calendarData = computed(() => {
 });
 
 const showDetail = ref(false)
+
+const disabledDates = defineModel<string[]>('disabledDates', { required:true })
+function toggleDisabledIndex(id:string){
+  if(id){
+    if(!isIndexDisabled(id)){
+      disabledDates.value.push(id)
+    }
+    else {
+      disabledDates.value = disabledDates.value.filter(d => d !== id)
+    }
+  }
+}
+function isIndexDisabled(id:string){
+  return disabledDates.value.includes(id)
+}
+
+function refresh(){
+  showDetail.value = false
+  disabledDates.value = []
+}
 </script>
 
 <style scoped>
@@ -127,6 +170,13 @@ const showDetail = ref(false)
   flex-direction: column;
   font-size: 12px;
   user-select: none;
+}
+
+.calendar-tools{
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
 }
 
 .calendar-weekday,.calendar-week {
@@ -142,6 +192,11 @@ const showDetail = ref(false)
   display: flex;
   justify-content: center;
   align-items: center;
+
+  
+  &.is-disabled-day {
+    text-decoration: line-through;
+  }
 }
 
 .calendar-weekday > .calendar-day{

@@ -1,4 +1,5 @@
 import * as xlsx from "xlsx";
+import { v4 as uuidV4 } from 'uuid' 
 
 const dateField = "时间";
 const dutyField = "班次";
@@ -91,6 +92,74 @@ function filterItemWithFilters(
   });
 }
 
+export function fromWorkDateListToTimeResult(
+  workDateList:  WorkDate[],
+  superStandardWorkTime: number,
+){
+  const workDays = workDateList.length;
+
+  const standardWorkTimeTotal = Number(
+    workDateList
+      .map((item) => item.standardHours)
+      .reduce((pre, cur) => pre + cur, 0)
+      .toFixed(2)
+  );
+
+  const workTimeTotal = Number(
+    workDateList
+      .map((item) => item.hours)
+      .reduce((pre, cur) => pre + cur, 0)
+      .toFixed(2)
+  );
+
+  console.info(workDateList)
+
+  const standardWorkTimeDaily = Number(workDateList[0]?.standardHours ?? superStandardWorkTime);
+
+  const workTimeDaily = workDays ? Number((workTimeTotal / workDays).toFixed(2)) : 0;
+
+  const overWorkTime = Number(
+    (workTimeTotal - standardWorkTimeTotal).toFixed(2)
+  );
+
+  return {
+    standardWorkTimeDaily,
+    standardWorkTimeTotal,
+    workTimeDaily,
+    workTimeTotal,
+    workDays,
+    overWorkTime,
+  };
+}
+
+function getWorkDateList(
+  workTimeList: Record<string, string>[],
+  filters: Record<string, ((value: any) => boolean) | undefined>,
+  superStandardWorkTime: number,
+){
+  const checkedWorkTimeList = workTimeList.filter((item) =>
+    filterItemWithFilters(item, filters)
+  );
+
+  const workDateList = checkedWorkTimeList.map((item) => {
+    const standardWorkTime = item[standardWorkTimeField] ? Number(item[standardWorkTimeField]) : superStandardWorkTime;
+    const defaultWorkTime = Number(item[timesField]) === 2 ? 0 : standardWorkTime;
+    const numberfyWorkTime = Number(item[workTimeField]);
+    const realWorkTime = !Number.isNaN(numberfyWorkTime)
+      ? numberfyWorkTime
+      : defaultWorkTime;
+    return {
+      id: uuidV4(),
+      date: item[dateField],
+      hours: realWorkTime,
+      standardHours: standardWorkTime,
+      diffHours: realWorkTime - standardWorkTime,
+    };
+  });
+
+  return workDateList.sort((a, b) => a.date.localeCompare(b.date))
+}
+
 // 计算工作时长详情
 function getWorkTimeDetail(
   workTimeList: any[],
@@ -145,23 +214,27 @@ function getWorkTimeDetail(
   };
 }
 
+export interface WorkDate  {
+  id: string;
+  date: string;
+  hours: number;
+  standardHours: number;
+  diffHours: number;
+};
 export interface ParseRes {
-  weeks: {
-    date: any;
-    hours: number;
-    diffHours: number;
-  }[];
+  weeks: WorkDate[];
   detail: Record<string, any>;
 }
 
 // 主函数：解析文件并应用筛选
 export async function parseExcelFile(
   file: File,
-  filters: { duty?: string; checkedStatus?: string; times?: string }
+  filters: { duty?: string; checkedStatus?: string; times?: string },
+  standardHours: number
 ) {
   const reader = new FileReader();
 
-  return new Promise<ParseRes>((resolve, reject) => {
+  return new Promise<WorkDate[]>((resolve, reject) => {
     reader.onload = (event) => {
       try {
         const data = new Uint8Array(event.target?.result as ArrayBuffer);
@@ -171,7 +244,7 @@ export async function parseExcelFile(
 
         const sheetData = getSheetData(worksheet);
         const filterCriteria = convertFilters(filters);
-        const result = getWorkTimeDetail(sheetData, filterCriteria);
+        const result = getWorkDateList(sheetData, filterCriteria, standardHours)
 
         resolve(result);
       } catch (error) {

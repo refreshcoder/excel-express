@@ -56,7 +56,7 @@
       <a-list style="margin-top: 20px" size="small">
         <template #header>
           <div style="text-align: center; margin-bottom: 8px;">统计结果</div>
-          <SCalender style="margin-bottom: 12px;" :data="resultWeeks" />
+          <SCalender style="margin-bottom: 12px;" :data="workDates" v-model:disabledDates="disabledDates" />
         </template>
         <a-list-item v-for="(item, index) in resultList" :key="index">
           <a-list-item-meta
@@ -74,25 +74,53 @@
 </template>
 
 <script setup lang="ts">
-import { parseExcelFile, type ParseRes } from "@/utils/reader";
-import { computed, ref } from "vue";
+import { fromWorkDateListToTimeResult, parseExcelFile, type ParseRes, type WorkDate } from "@/utils/reader";
+import { computed, ref, watch } from "vue";
 import SCalender from "./SCalender.vue";
 import { useLocalStorage } from "@vueuse/core";
 import type { FileItem } from "@arco-design/web-vue";
 
+const DEFAULT_STANDARD_WORK_TIME = 9
+
+
 // 文件和数据
 const fileList = ref<any[]>([]); // arco-design-vue 文件列表
-const result = ref<ParseRes>({ weeks: [], detail: {} }); // 解析结果
+const workDates = ref<WorkDate[]>([]); // 解析结果
 
-const resultWeeks = computed(() => {
-  return result.value.weeks;
+const disabledDates = ref<string[]>([])
+watch(
+  workDates,
+  () => {
+    disabledDates.value = []
+  } 
+)
+
+const selectedWorkDates = computed(() => {
+  return workDates.value.filter((wd) => !disabledDates.value.includes(wd.id));
 });
-const resultList = computed(() => {
-  return Object.entries(result.value.detail).map(([k, v]) => ({
-    label: k,
-    value: v,
-  }));
+
+const resultData = computed(() => {
+  return fromWorkDateListToTimeResult(selectedWorkDates.value, DEFAULT_STANDARD_WORK_TIME)
 });
+
+const resultList = computed(()=>{
+  const {
+    standardWorkTimeDaily,
+    standardWorkTimeTotal,
+    workTimeDaily,
+    workTimeTotal,
+    workDays,
+    overWorkTime,
+  } = resultData.value
+  return [
+    { label: '工作天数', value: workDays },
+    { label: '每日标准工作时长(小时)', value: standardWorkTimeDaily },
+    { label: '平均实际工作时长(小时)', value: workTimeDaily },
+    { label:'累计标准工作时长(小时)' , value: standardWorkTimeTotal },
+    { label: '累计实际工作时长(小时)', value: workTimeTotal },
+    { label: '累计实际工作时长(小时)差额', value: overWorkTime },
+  ]
+})
 
 // 筛选配置
 const filters = useLocalStorage("___filters", {
@@ -130,8 +158,8 @@ const processFile = async () => {
   const file = fileList.value[0].file;
   if (file) {
     try {
-      const data = await parseExcelFile(file, filters.value);
-      result.value = data;
+      const data = await parseExcelFile(file, filters.value, DEFAULT_STANDARD_WORK_TIME);
+      workDates.value = data;
     } catch (error) {
       console.error("解析失败:", error);
     }
