@@ -30,7 +30,13 @@
       >
         <div v-if="day.hours >= 0">
           <div class="calendar-date">{{ day.date.replace(/\w+\//, '') }}</div>
-          <div class="calendar-hours">
+          <div 
+            class="calendar-hours" 
+            :class="{ 
+                'is-not-complete' : day.markedTimes === 0,
+                'is-half-complete': day.markedTimes === 1
+              }"
+          >
             <a-typography-text :type="(day.diffHours > 0 ? 'success' : (day.diffHours < 0 ? 'danger' : 'secondary'))">
               {{ (showDetail ? day.diffHours : day.hours).toFixed(1) }}
             </a-typography-text>
@@ -66,6 +72,7 @@ const parsedData = computed(() => {
       weekday,
       hours: item.hours,
       diffHours: item.diffHours,
+      markedTimes: item.markedTimes
     };
   });
 });
@@ -128,7 +135,7 @@ const calendarData = computed(() => {
       const original = dateMap.get(date.date)!;
       return { ...original };
     } else {
-      return { id: '', date: date.date, hours: -1, diffHours: 0, weekday: date.weekday };
+      return { id: '', date: date.date, hours: -1, diffHours: 0, weekday: date.weekday, markedTimes: 0 };
     }
   });
 
@@ -192,11 +199,12 @@ function refresh(){
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
 
   
-  &.is-disabled-day {
+.calendar-day.is-disabled-day {
     text-decoration: line-through;
-  }
 }
 
 .calendar-weekday > .calendar-day{
@@ -221,6 +229,14 @@ function refresh(){
   color: #555;
 }
 
+.calendar-hours.is-half-complete{
+  border: 1px dashed #ddd;
+}
+
+.calendar-hours.is-not-complete{
+  border: 1px solid #ddd;
+}
+
 .calendar-hours.up {
   color: var(--success-6);
 }
@@ -231,5 +247,9 @@ function refresh(){
 
 .calendar-placeholder {
   color: #ccc;
+}
+
+.calendar-placeholder div {
+  opacity: 0;
 }
 </style>

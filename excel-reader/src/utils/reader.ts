@@ -132,6 +132,10 @@ export function fromWorkDateListToTimeResult(
   };
 }
 
+function isNumberable(origin: any){
+  return !Number.isNaN(Number(origin))
+}
+
 function getWorkDateList(
   workTimeList: Record<string, string>[],
   filters: Record<string, ((value: any) => boolean) | undefined>,
@@ -141,23 +145,23 @@ function getWorkDateList(
     filterItemWithFilters(item, filters)
   );
 
+  console.log(checkedWorkTimeList)
+
   const workDateList = checkedWorkTimeList.map((item) => {
-    const standardWorkTime = item[standardWorkTimeField] ? Number(item[standardWorkTimeField]) : superStandardWorkTime;
-    const defaultWorkTime = Number(item[timesField]) === 2 ? 0 : standardWorkTime;
-    const numberfyWorkTime = Number(item[workTimeField]);
-    const realWorkTime = !Number.isNaN(numberfyWorkTime)
-      ? numberfyWorkTime
-      : defaultWorkTime;
+    const standardWorkTime = isNumberable(item[standardWorkTimeField]) ? Number(item[standardWorkTimeField]) : superStandardWorkTime;
+    const markedTimes = isNumberable(item[timesField]) ? Number(item[timesField]) : 0;
+    const realWorkTime = isNumberable(item[workTimeField]) ? Number(item[workTimeField]) : standardWorkTime;
     return {
       id: uuidV4(),
       date: item[dateField],
       hours: realWorkTime,
       standardHours: standardWorkTime,
       diffHours: realWorkTime - standardWorkTime,
+      markedTimes
     };
   });
 
-  return workDateList.sort((a, b) => a.date.localeCompare(b.date))
+  return workDateList.reverse()
 }
 
 // 计算工作时长详情
@@ -214,12 +218,13 @@ function getWorkTimeDetail(
   };
 }
 
-export interface WorkDate  {
+export interface WorkDate {
   id: string;
   date: string;
   hours: number;
   standardHours: number;
   diffHours: number;
+  markedTimes: number;
 };
 export interface ParseRes {
   weeks: WorkDate[];
