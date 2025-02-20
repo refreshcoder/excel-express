@@ -64,7 +64,9 @@
           />
           <template #extra>
             <a-space style="height: 100%;" align="center">
-              {{ item.value.toString() }}
+              <a-typography-text :type="item.status">
+                {{ item.value.toString() }}
+            </a-typography-text>
             </a-space>
           </template>
         </a-list-item>
@@ -118,15 +120,15 @@ const resultList = computed(()=>{
     { label: '平均实际工作时长(小时)', value: workTimeDaily },
     { label:'累计标准工作时长(小时)' , value: standardWorkTimeTotal },
     { label: '累计实际工作时长(小时)', value: workTimeTotal },
-    { label: '累计实际工作时长(小时)差额', value: overWorkTime },
+    { label: '累计实际工作时长(小时)差额', value: overWorkTime, status: overWorkTime >= 0 ? 'success' : 'danger' },
   ]
 })
 
 // 筛选配置
 const filters = useLocalStorage("___filters", {
   duty: "非休息",
-  checkedStatus: "正常",
-  times: "2",
+  checkedStatus: "非请假休息一律统计",
+  times: "",
 });
 
 const dutyOptions = [

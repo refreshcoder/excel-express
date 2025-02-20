@@ -26,10 +26,12 @@
         :key="dayIndex" 
         class="calendar-day" 
         :class="{ 'is-disabled-day': isIndexDisabled(day.id) }" 
-        @click="() => toggleDisabledIndex(day.id)"
       >
-        <div v-if="day.hours >= 0">
-          <div class="calendar-date">{{ day.date.replace(/\w+\//, '') }}</div>
+        <div v-if="day.isWorkday" class="calendar-marker"></div>
+        <div v-if="day.hours >= 0" @click="() => toggleDisabledIndex(day.id)">
+          <div class="calendar-date">
+            {{ day.date.replace(/\w+\//, '') }}
+          </div>
           <div 
             class="calendar-hours" 
             :class="{ 
@@ -72,7 +74,8 @@ const parsedData = computed(() => {
       weekday,
       hours: item.hours,
       diffHours: item.diffHours,
-      markedTimes: item.markedTimes
+      markedTimes: item.markedTimes,
+      isWorkday: item.isWorkday
     };
   });
 });
@@ -135,7 +138,7 @@ const calendarData = computed(() => {
       const original = dateMap.get(date.date)!;
       return { ...original };
     } else {
-      return { id: '', date: date.date, hours: -1, diffHours: 0, weekday: date.weekday, markedTimes: 0 };
+      return { id: '', date: date.date, hours: -1, diffHours: 0, weekday: date.weekday, markedTimes: 0, isWorkday: false };
     }
   });
 
@@ -183,7 +186,7 @@ function refresh(){
   margin-bottom: 8px;
   display: flex;
   justify-content: flex-end;
-  gap: 4px;
+  gap: 8px;
 }
 
 .calendar-weekday,.calendar-week {
@@ -199,9 +202,8 @@ function refresh(){
   display: flex;
   justify-content: center;
   align-items: center;
+  position: relative;
 }
-
-
   
 .calendar-day.is-disabled-day {
     text-decoration: line-through;
@@ -219,6 +221,16 @@ function refresh(){
 .calendar-weekday > .calendar-day,
 .calendar-week > .calendar-day {
   border-right: 1px solid #ddd;
+}
+
+.calendar-marker {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 0;
+  height: 0;
+  border-bottom: 8px solid transparent;
+  border-right: 8px solid #00B42A;
 }
 
 .calendar-date {

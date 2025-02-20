@@ -151,13 +151,15 @@ function getWorkDateList(
     const standardWorkTime = isNumberable(item[standardWorkTimeField]) ? Number(item[standardWorkTimeField]) : superStandardWorkTime;
     const markedTimes = isNumberable(item[timesField]) ? Number(item[timesField]) : 0;
     const realWorkTime = isNumberable(item[workTimeField]) ? Number(item[workTimeField]) : standardWorkTime;
+    const isWorkday = item[dutyField] !== '休息';
     return {
       id: uuidV4(),
       date: item[dateField],
       hours: realWorkTime,
       standardHours: standardWorkTime,
       diffHours: realWorkTime - standardWorkTime,
-      markedTimes
+      markedTimes,
+      isWorkday,
     };
   });
 
@@ -225,6 +227,7 @@ export interface WorkDate {
   standardHours: number;
   diffHours: number;
   markedTimes: number;
+  isWorkday?: boolean;
 };
 export interface ParseRes {
   weeks: WorkDate[];
