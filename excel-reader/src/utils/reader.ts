@@ -2,24 +2,26 @@ import * as xlsx from "xlsx";
 import { v4 as uuidV4 } from 'uuid';
 
 // number check
-function numberify(origin: any): number | undefined {
-  if (origin === null || origin === undefined) return undefined;
-  
-  // 排除本身就是number
+function numberify(origin: any) {  
+  // 如果是number
   if (typeof origin === 'number') {
     return Number.isNaN(origin) ? undefined : origin;
   };
-  
-  // 转换为字符串并移除非数字字符（保留小数点和负号）
-  const str = String(origin).replace(/[^\d.-]/g, '');
-  
-  // 检查是否可以转换为有效数字
-  const num = Number(str);
-  if (Number.isNaN(num)) {
-    return undefined;
-  }
-  
-  return num;
+
+  if (typeof origin === 'string') {
+    // 转换为字符串并移除非数字字符（保留小数点和负号）
+    const str = String(origin).replace(/[^\d.-]/g, '');
+    
+    // 检查是否可以转换为有效数字
+    const num = Number(str);
+    if (Number.isNaN(num)) {
+      return undefined;
+    }
+    
+    return num;
+  };
+
+  return undefined;
 }
 
 const dateField = "时间";
@@ -28,6 +30,16 @@ const timesField = "打卡次数";
 const checkedStatusField = "校准状态";
 const standardWorkTimeField = "标准工作时长";
 const workTimeField = "实际工作时长";
+
+enum DutyType {
+  Free = '休息'
+}
+
+enum CheckedStatus {
+  Normal = '正常',
+  DayOff = '请假',
+  FreeNormal = '正常（休息）'
+}
 
 // 合并前两行的数据
 function mergeRows(row1: string[], row2: string[]) {
@@ -80,16 +92,16 @@ function convertFilters({
 
   if (duty) {
     if (duty === "非休息") {
-      filters[dutyField] = (t) => t !== "休息";
+      filters[dutyField] = (t) => t !== DutyType.Free;
     }
   }
 
   if (checkedStatus) {
     if (checkedStatus === "正常") {
-      filters[checkedStatusField] = (t) => t === "正常";
+      filters[checkedStatusField] = (t) => t === CheckedStatus.Normal;
     } else if (checkedStatus === "非请假休息") {
       filters[checkedStatusField] = (t) =>
-        !t.includes("请假") && !t.includes("休息");
+        !t.includes(CheckedStatus.DayOff) && !t.includes(CheckedStatus.FreeNormal);
     }
   }
 
@@ -168,7 +180,7 @@ function getWorkDateList(
     const standardWorkTime = numberify(item[standardWorkTimeField]) ?? superStandardWorkTime;
     const markedTimes = numberify(item[timesField]) ?? 0;
     const realWorkTime = numberify(item[workTimeField]) ?? standardWorkTime;
-    const isWorkday = item[dutyField] !== '休息';
+    const isWorkday = item[dutyField] !== DutyType.Free;
     return {
       id: uuidV4(),
       date: item[dateField],
@@ -192,19 +204,14 @@ function getWorkTimeDetail(
     filterItemWithFilters(item, filters)
   );
 
-  const standardWorkTimeDaily = checkedWorkTimeList[0]
-    ? numberify(checkedWorkTimeList[0][standardWorkTimeField])
-    : 9;
+  const standardWorkTimeDaily = numberify(checkedWorkTimeList[0]?.[standardWorkTimeField]) ?? 9;
 
   const workDays = checkedWorkTimeList.length;
   const standardWorkTimeTotal = standardWorkTimeDaily * workDays;
 
   const workDateList = checkedWorkTimeList.map((item) => {
     const defaultWorkTime = numberify(item[timesField]) === 2 ? 0 : standardWorkTimeDaily;
-    const numberfyWorkTime = numberify(item[workTimeField]);
-    const realWorkTime = !Number.isNaN(numberfyWorkTime)
-      ? numberfyWorkTime
-      : defaultWorkTime;
+    const realWorkTime = numberify(item[workTimeField]) ?? defaultWorkTime;
     return {
       date: item[dateField],
       hours: realWorkTime,
