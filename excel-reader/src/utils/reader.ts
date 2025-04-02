@@ -1,5 +1,26 @@
 import * as xlsx from "xlsx";
-import { v4 as uuidV4 } from 'uuid' 
+import { v4 as uuidV4 } from 'uuid';
+
+// number check
+function numberify(origin: any): number | undefined {
+  if (origin === null || origin === undefined) return undefined;
+  
+  // 排除本身就是number
+  if (typeof origin === 'number') {
+    return Number.isNaN(origin) ? undefined : origin;
+  };
+  
+  // 转换为字符串并移除非数字字符（保留小数点和负号）
+  const str = String(origin).replace(/[^\d.-]/g, '');
+  
+  // 检查是否可以转换为有效数字
+  const num = Number(str);
+  if (Number.isNaN(num)) {
+    return undefined;
+  }
+  
+  return num;
+}
 
 const dateField = "时间";
 const dutyField = "班次";
@@ -132,10 +153,6 @@ export function fromWorkDateListToTimeResult(
   };
 }
 
-function isNumberable(origin: any){
-  return !Number.isNaN(Number(origin))
-}
-
 function getWorkDateList(
   workTimeList: Record<string, string>[],
   filters: Record<string, ((value: any) => boolean) | undefined>,
@@ -148,9 +165,9 @@ function getWorkDateList(
   console.log(checkedWorkTimeList)
 
   const workDateList = checkedWorkTimeList.map((item) => {
-    const standardWorkTime = isNumberable(item[standardWorkTimeField]) ? Number(item[standardWorkTimeField]) : superStandardWorkTime;
-    const markedTimes = isNumberable(item[timesField]) ? Number(item[timesField]) : 0;
-    const realWorkTime = isNumberable(item[workTimeField]) ? Number(item[workTimeField]) : standardWorkTime;
+    const standardWorkTime = numberify(item[standardWorkTimeField]) ?? superStandardWorkTime;
+    const markedTimes = numberify(item[timesField]) ?? 0;
+    const realWorkTime = numberify(item[workTimeField]) ?? standardWorkTime;
     const isWorkday = item[dutyField] !== '休息';
     return {
       id: uuidV4(),
@@ -176,15 +193,15 @@ function getWorkTimeDetail(
   );
 
   const standardWorkTimeDaily = checkedWorkTimeList[0]
-    ? Number(checkedWorkTimeList[0][standardWorkTimeField])
+    ? numberify(checkedWorkTimeList[0][standardWorkTimeField])
     : 9;
 
   const workDays = checkedWorkTimeList.length;
   const standardWorkTimeTotal = standardWorkTimeDaily * workDays;
 
   const workDateList = checkedWorkTimeList.map((item) => {
-    const defaultWorkTime = item[timesField] === 2 ? 0 : standardWorkTimeDaily;
-    const numberfyWorkTime = Number(item[workTimeField]);
+    const defaultWorkTime = numberify(item[timesField]) === 2 ? 0 : standardWorkTimeDaily;
+    const numberfyWorkTime = numberify(item[workTimeField]);
     const realWorkTime = !Number.isNaN(numberfyWorkTime)
       ? numberfyWorkTime
       : defaultWorkTime;
