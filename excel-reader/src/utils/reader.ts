@@ -107,7 +107,7 @@ function convertFilters({
 
   if (times) {
     if (times === "2") {
-      filters[timesField] = (t) => t === 2;
+      filters[timesField] = (t) => numberify(t) === 2;
     }
   }
 
