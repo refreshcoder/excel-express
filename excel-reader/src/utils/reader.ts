@@ -24,10 +24,10 @@ function numberify(origin: any): number | undefined {
 
 const dateField = "时间";
 const dutyField = "班次";
-const timesField = "打卡次数(次)";
+const timesField = "打卡次数";
 const checkedStatusField = "校准状态";
-const standardWorkTimeField = "标准工作时长(小时)";
-const workTimeField = "实际工作时长(小时)";
+const standardWorkTimeField = "标准工作时长";
+const workTimeField = "实际工作时长";
 
 // 合并前两行的数据
 function mergeRows(row1: string[], row2: string[]) {
