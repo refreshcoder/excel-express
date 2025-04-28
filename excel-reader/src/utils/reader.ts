@@ -26,10 +26,10 @@ function numberify(origin: any) {
 
 const dateField = "时间";
 const dutyField = "班次";
-const timesField = "打卡次数";
+const timesField = "打卡次数(次)";
 const checkedStatusField = "校准状态";
-const standardWorkTimeField = "标准工作时长";
-const workTimeField = "实际工作时长";
+const standardWorkTimeField = "标准工作时长(小时)";
+const workTimeField = "实际工作时长(小时)";
 
 enum DutyType {
   Free = '休息'
