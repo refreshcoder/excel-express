@@ -24,12 +24,28 @@ function numberify(origin: any) {
   return undefined;
 }
 
+function calculateHoursBetween(startTime: string, endTime: string): number {
+  const parseTime = (timeStr: string): number => {
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return hours * 60 + minutes;
+  };
+
+  const startMinutes = parseTime(startTime);
+  const endMinutes = parseTime(endTime);
+
+  const diffMinutes = endMinutes - startMinutes;
+  return parseFloat((diffMinutes / 60).toFixed(1)); // 保留1位小数
+}
+
+
 const dateField = "时间";
 const dutyField = "班次";
 const timesField = "打卡次数(次)";
 const checkedStatusField = "校准状态";
 const standardWorkTimeField = "标准工作时长(小时)";
 const workTimeField = "实际工作时长(小时)";
+const firstTimeField = "最早";
+const lastTimeField = "最晚";
 
 enum DutyType {
   Free = '休息'
@@ -169,6 +185,7 @@ function getWorkDateList(
   workTimeList: Record<string, string>[],
   filters: Record<string, ((value: any) => boolean) | undefined>,
   superStandardWorkTime: number,
+  strictTime: boolean
 ){
   const checkedWorkTimeList = workTimeList.filter((item) =>
     filterItemWithFilters(item, filters)
@@ -179,7 +196,12 @@ function getWorkDateList(
   const workDateList = checkedWorkTimeList.map((item) => {
     const standardWorkTime = numberify(item[standardWorkTimeField]) ?? superStandardWorkTime;
     const markedTimes = numberify(item[timesField]) ?? 0;
-    const realWorkTime = numberify(item[workTimeField]) ?? standardWorkTime;
+
+    const firstTimeStr = item[firstTimeField]
+    const lastTimeStr = item[lastTimeField]
+    const strictRealWorkTime = (firstTimeStr && lastTimeStr) ? calculateHoursBetween(firstTimeStr, lastTimeStr) : undefined
+
+    const realWorkTime = (strictTime ? numberify(item[workTimeField]) : strictRealWorkTime) ?? standardWorkTime;
     const isWorkday = item[dutyField] !== DutyType.Free;
     return {
       id: uuidV4(),
@@ -262,7 +284,8 @@ export interface ParseRes {
 export async function parseExcelFile(
   file: File,
   filters: { duty?: string; checkedStatus?: string; times?: string },
-  standardHours: number
+  standardHours: number,
+  strictTime: boolean
 ) {
   const reader = new FileReader();
 
@@ -276,7 +299,7 @@ export async function parseExcelFile(
 
         const sheetData = getSheetData(worksheet);
         const filterCriteria = convertFilters(filters);
-        const result = getWorkDateList(sheetData, filterCriteria, standardHours)
+        const result = getWorkDateList(sheetData, filterCriteria, standardHours, strictTime)
 
         resolve(result);
       } catch (error) {

@@ -39,6 +39,17 @@
         <a-form-item label="打卡次数">
           <a-select v-model="filters.times" :options="timesOptions" />
         </a-form-item>
+
+        <a-form-item label="时间计算">
+          <a-switch type="round" v-model="useStrictTime">
+            <template #checked>
+              严格
+            </template>
+            <template #unchecked>
+              原始
+            </template>
+          </a-switch>
+        </a-form-item>
       </a-form>
 
       <div style="display: flex; justify-content: space-between">
@@ -145,6 +156,8 @@ const timesOptions = [
   { label: "2次", value: "2" },
 ];
 
+const useStrictTime = useLocalStorage("___use_strict_time", false);
+
 // 上传文件逻辑
 const onFileChange = (files: FileItem[]) => {
   fileList.value = [...files];
@@ -160,7 +173,7 @@ const processFile = async () => {
   const file = fileList.value[0].file;
   if (file) {
     try {
-      const data = await parseExcelFile(file, filters.value, DEFAULT_STANDARD_WORK_TIME);
+      const data = await parseExcelFile(file, filters.value, DEFAULT_STANDARD_WORK_TIME, useStrictTime.value);
       workDates.value = data;
     } catch (error) {
       console.error("解析失败:", error);
