@@ -46,6 +46,7 @@ const standardWorkTimeField = "标准工作时长(小时)";
 const workTimeField = "实际工作时长(小时)";
 const firstTimeField = "最早";
 const lastTimeField = "最晚";
+const timeListField = "打卡时间记录";
 
 enum DutyType {
   Free = '休息'
@@ -80,12 +81,14 @@ function getSheetData(worksheet: xlsx.WorkSheet) {
   });
   const [header1, header2] = headers;
   const fullHeader = mergeRows(header1, header2);
+  console.log(fullHeader)
 
   const valueStartRow = 4; // 从第五行开始
   const jsonData = xlsx.utils.sheet_to_json<any>(worksheet, {
     header: fullHeader,
     range: valueStartRow,
   });
+
 
   return jsonData;
 }
@@ -197,9 +200,10 @@ function getWorkDateList(
     const standardWorkTime = numberify(item[standardWorkTimeField]) ?? superStandardWorkTime;
     const markedTimes = numberify(item[timesField]) ?? 0;
 
-    const firstTimeStr = item[firstTimeField]
-    const lastTimeStr = item[lastTimeField]
-    const strictRealWorkTime = (firstTimeStr !== '--' && firstTimeStr && lastTimeStr !== '--' && lastTimeStr) ? calculateHoursBetween(firstTimeStr, lastTimeStr) : undefined
+    const timeList = item[timeListField] !== '--' ? item[timeListField]?.split(' ') : []
+    const firstTimeStr = timeList[0]
+    const lastTimeStr = timeList[timeList.length - 1]
+    const strictRealWorkTime = (timeList.length > 1 && firstTimeStr && lastTimeStr) ? calculateHoursBetween(firstTimeStr, lastTimeStr) : undefined
 
     const realWorkTime = (strictTime ? numberify(item[workTimeField]) : strictRealWorkTime) ?? standardWorkTime;
     const isWorkday = item[dutyField] !== DutyType.Free;
