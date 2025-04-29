@@ -39,14 +39,13 @@ function calculateHoursBetween(startTime: string, endTime: string): number {
 
 
 const dateField = "时间";
-const dutyField = "班次";
-const timesField = "打卡次数(次)";
-const checkedStatusField = "校准状态";
-const standardWorkTimeField = "标准工作时长(小时)";
-const workTimeField = "实际工作时长(小时)";
-const firstTimeField = "最早";
-const lastTimeField = "最晚";
-const timeListField = "打卡时间记录";
+const dutyField = "考勤概况/班次";
+const timesField = "考勤概况/打卡次数(次)";
+const checkedStatusField = "考勤概况/考勤结果";
+const standardWorkTimeField = "考勤概况/标准工作时长(小时)";
+const workTimeField = "考勤概况/实际工作时长(小时)";
+const firstTimeField = "考勤概况/最早";
+const lastTimeField = "考勤概况/最晚";
 
 enum DutyType {
   Free = '休息'
@@ -64,8 +63,13 @@ function mergeRows(row1: string[], row2: string[]) {
   const header = row1;
   const values = row2;
 
+  let lastHeader = ''
+
   for (let i = 0; i < header.length; i++) {
-    const value = !!values[i] ? values[i] : header[i];
+    if(!!header[i]){
+      lastHeader = header[i]
+    }
+    const value = !!values[i] ? (lastHeader ? `${lastHeader}/${values[i]}` : values[i]) : lastHeader;
     mergedData.push(value);
   }
 
@@ -81,7 +85,7 @@ function getSheetData(worksheet: xlsx.WorkSheet) {
   });
   const [header1, header2] = headers;
   const fullHeader = mergeRows(header1, header2);
-  console.log(fullHeader)
+  console.log(header1, header2, fullHeader)
 
   const valueStartRow = 4; // 从第五行开始
   const jsonData = xlsx.utils.sheet_to_json<any>(worksheet, {
@@ -200,10 +204,10 @@ function getWorkDateList(
     const standardWorkTime = numberify(item[standardWorkTimeField]) ?? superStandardWorkTime;
     const markedTimes = numberify(item[timesField]) ?? 0;
 
-    const timeList = item[timeListField] !== '--' ? item[timeListField]?.split(' ') : []
-    const firstTimeStr = timeList[0]
-    const lastTimeStr = timeList[timeList.length - 1]
-    const strictRealWorkTime = (timeList.length > 1 && firstTimeStr && lastTimeStr) ? calculateHoursBetween(firstTimeStr, lastTimeStr) : undefined
+    const firstTimeStr = item[firstTimeField]
+    const lastTimeStr = item[lastTimeField]
+    const strictRealWorkTime = (firstTimeStr !== '--' && firstTimeStr && lastTimeStr !== '--' && lastTimeStr) ? calculateHoursBetween(firstTimeStr, lastTimeStr) : undefined
+
 
     const realWorkTime = (!strictTime ? numberify(item[workTimeField]) : strictRealWorkTime) ?? standardWorkTime;
     const isWorkday = item[dutyField] !== DutyType.Free;

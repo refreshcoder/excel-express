@@ -32,7 +32,7 @@
           <a-select v-model="filters.duty" :options="dutyOptions" />
         </a-form-item>
 
-        <a-form-item label="校准状态">
+        <a-form-item label="考勤结果">
           <a-select v-model="filters.checkedStatus" :options="statusOptions" />
         </a-form-item>
 
