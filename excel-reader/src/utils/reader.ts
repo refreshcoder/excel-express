@@ -205,7 +205,7 @@ function getWorkDateList(
     const lastTimeStr = timeList[timeList.length - 1]
     const strictRealWorkTime = (timeList.length > 1 && firstTimeStr && lastTimeStr) ? calculateHoursBetween(firstTimeStr, lastTimeStr) : undefined
 
-    const realWorkTime = (strictTime ? numberify(item[workTimeField]) : strictRealWorkTime) ?? standardWorkTime;
+    const realWorkTime = (!strictTime ? numberify(item[workTimeField]) : strictRealWorkTime) ?? standardWorkTime;
     const isWorkday = item[dutyField] !== DutyType.Free;
     return {
       id: uuidV4(),
