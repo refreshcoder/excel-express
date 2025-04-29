@@ -199,7 +199,7 @@ function getWorkDateList(
 
     const firstTimeStr = item[firstTimeField]
     const lastTimeStr = item[lastTimeField]
-    const strictRealWorkTime = (firstTimeStr && lastTimeStr) ? calculateHoursBetween(firstTimeStr, lastTimeStr) : undefined
+    const strictRealWorkTime = (firstTimeStr !== '--' && firstTimeStr && lastTimeStr !== '--' && lastTimeStr) ? calculateHoursBetween(firstTimeStr, lastTimeStr) : undefined
 
     const realWorkTime = (strictTime ? numberify(item[workTimeField]) : strictRealWorkTime) ?? standardWorkTime;
     const isWorkday = item[dutyField] !== DutyType.Free;
