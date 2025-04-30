@@ -2,14 +2,14 @@
   <div class="calendar-container">
     <div v-if="calendarData.length" class="calendar-tools">
       <a-button size="mini" @click="refresh"><icon-sync /></a-button>
-      <a-switch type="round" v-model="showDetail">
+      <!-- <a-switch type="round" v-model="showDetail">
         <template #checked>
-          差值
+          详情
         </template>
         <template #unchecked>
-          时间
+          基本
         </template>
-      </a-switch>
+      </a-switch> -->
     </div>
     <div v-if="calendarData.length" class="calendar-weekday">
       <div class="calendar-day" v-for="(weekday, index) in weekDays" :key="index">
@@ -28,7 +28,7 @@
         :class="{ 'is-disabled-day': isIndexDisabled(day.id) }" 
       >
         <div v-if="day.isWorkday" class="calendar-marker"></div>
-        <div v-if="day.hours >= 0" @click="() => toggleDisabledIndex(day.id)">
+        <div class="calendar-day-wrap" v-if="day.hours >= 0" @click="() => toggleDisabledIndex(day.id)">
           <div class="calendar-date">
             {{ day.date.replace(/\w+\//, '') }}
           </div>
@@ -39,15 +39,26 @@
                 'is-half-complete': day.markedTimes === 1
               }"
           >
-            <a-typography-text :type="(day.diffHours > 0 ? 'success' : (day.diffHours < 0 ? 'danger' : 'secondary'))">
-              {{ (showDetail ? day.diffHours : day.hours).toFixed(1) }}
+            <a-typography-text v-if="day.diffHours > 0" type="success" bold>
+              {{ `${day.hours.toFixed(1)}` }}
+            </a-typography-text>
+            <a-typography-text v-else-if="day.diffHours < 0" type="danger" bold>
+              {{ `${day.hours.toFixed(1)}` }}
+            </a-typography-text>
+            <a-typography-text v-else type="secondary" bold>
+              {{ `${day.hours.toFixed(1)}` }}
             </a-typography-text>
           </div>
+          <div class="calendar-hours-addtion">
+            <div>{{ day.firstTime || '--' }}</div>
+            <div>{{ day.lastTime || '--' }}</div>
+          </div>
         </div>
-        <div v-else>
+        <div class="calendar-day-wrap" v-else>
           <div class="calendar-placeholder">
             <div class="calendar-date">&nbsp;</div>
             <div class="calendar-hours">&nbsp;</div>
+            <div class="calendar-hours-addtion">&nbsp;</div>
           </div>
         </div>
       </div>
@@ -65,7 +76,7 @@ const props = defineProps({
   data: { type: Array as PropType<WorkDate[]> ,default: ()=> []},
 });
 
-const parsedData = computed(() => {
+const parsedData = computed<Omit<WorkDate, 'standardHours'>[]>(() => {
   return props.data.map((item) => {
     const [date, weekday] = item.date.split(" ");
     return {
@@ -75,6 +86,8 @@ const parsedData = computed(() => {
       hours: item.hours,
       diffHours: item.diffHours,
       markedTimes: item.markedTimes,
+      firstTime: item.firstTime,
+      lastTime: item.lastTime,
       isWorkday: item.isWorkday
     };
   });
@@ -178,11 +191,11 @@ function refresh(){
 .calendar-container {
   display: flex;
   flex-direction: column;
-  font-size: 12px;
+  font-size: 14px;
   user-select: none;
 }
 
-.calendar-tools{
+.calendar-tools {
   margin-bottom: 8px;
   display: flex;
   justify-content: flex-end;
@@ -207,6 +220,11 @@ function refresh(){
   
 .calendar-day.is-disabled-day {
     text-decoration: line-through;
+}
+
+.calendar-day-wrap {
+  height: 100%;
+  cursor: pointer;
 }
 
 .calendar-weekday > .calendar-day{
@@ -234,11 +252,12 @@ function refresh(){
 }
 
 .calendar-date {
-  font-weight: bold;
+  font-size: 0.75em;
 }
 
 .calendar-hours {
   color: #555;
+  border: 1px solid transparent;
 }
 
 .calendar-hours.is-half-complete{
@@ -255,6 +274,11 @@ function refresh(){
 
 .calendar-hours.down {
   color: var(--danger-6);
+}
+
+.calendar-hours-addtion {
+  font-size: 0.75em;
+  color: var(--color-text-3);
 }
 
 .calendar-placeholder {

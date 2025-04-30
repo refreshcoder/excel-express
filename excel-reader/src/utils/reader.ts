@@ -37,15 +37,41 @@ function calculateHoursBetween(startTime: string, endTime: string): number {
   return parseFloat((diffMinutes / 60).toFixed(1)); // 保留1位小数
 }
 
+const mergeHeaders = (parentHeader: string, childHeader?: string) => {
+  return childHeader ? `${parentHeader}/${childHeader}` : parentHeader
+}
 
-const dateField = "时间";
-const dutyField = "考勤概况/班次";
-const timesField = "考勤概况/打卡次数(次)";
-const checkedStatusField = "考勤概况/考勤结果";
-const standardWorkTimeField = "考勤概况/标准工作时长(小时)";
-const workTimeField = "考勤概况/实际工作时长(小时)";
-const firstTimeField = "考勤概况/最早";
-const lastTimeField = "考勤概况/最晚";
+const dateHeader = "时间";
+const summaryHeader = '考勤概况';
+const dutyHeader = "班次";
+const timesHeader = "打卡次数(次)";
+const checkedStatusHeader = "考勤结果";
+const standardWorkTimeHeader = "标准工作时长(小时)";
+const workTimeHeader = "实际工作时长(小时)";
+const firstTimeHeader = "最早";
+const lastTimeHeader = "最晚";
+
+const dateField = mergeHeaders(dateHeader);
+const dutyField = mergeHeaders(summaryHeader, dutyHeader);
+const timesField = mergeHeaders(summaryHeader, timesHeader);
+const checkedStatusField = mergeHeaders(summaryHeader, checkedStatusHeader);
+const standardWorkTimeField = mergeHeaders(summaryHeader, standardWorkTimeHeader);
+const workTimeField = mergeHeaders(summaryHeader, workTimeHeader);
+const firstTimeField = mergeHeaders(summaryHeader, firstTimeHeader);
+const lastTimeField = mergeHeaders(summaryHeader, lastTimeHeader);
+
+const stringifyValue = (v: string | number | undefined) => {
+  if (typeof v === 'string') {
+    if(v === '--') return ''
+    return v
+  }
+  if (typeof v === 'number') {
+    if(isNaN(v)) return ''
+    return `${v}`
+  }
+  return ''
+}
+type Row<H extends string, V = unknown> = Record<H, V>
 
 enum DutyType {
   Free = '休息'
@@ -58,7 +84,7 @@ enum CheckedStatus {
 }
 
 // 合并前两行的数据
-function mergeRows(row1: string[], row2: string[]) {
+function mergeRows(row1: (string)[], row2: string[]) {
   const mergedData = [];
   const header = row1;
   const values = row2;
@@ -69,7 +95,7 @@ function mergeRows(row1: string[], row2: string[]) {
     if(!!header[i]){
       lastHeader = header[i]
     }
-    const value = !!values[i] ? (lastHeader ? `${lastHeader}/${values[i]}` : values[i]) : lastHeader;
+    const value = mergeHeaders(lastHeader, values[i])
     mergedData.push(value);
   }
 
@@ -88,13 +114,25 @@ function getSheetData(worksheet: xlsx.WorkSheet) {
   console.log(header1, header2, fullHeader)
 
   const valueStartRow = 4; // 从第五行开始
-  const jsonData = xlsx.utils.sheet_to_json<any>(worksheet, {
+  const jsonData = xlsx.utils.sheet_to_json<Row<string, string | number>>(worksheet, {
     header: fullHeader,
     range: valueStartRow,
   });
 
+  const res = jsonData.map((item) => {
+    const newItem: Row<string, string> = {};
 
-  return jsonData;
+    // 遍历每个字段并应用getValue函数
+    for (const key in item) {
+      if (item.hasOwnProperty(key)) {
+        newItem[key] = stringifyValue(item[key]);
+      }
+    }
+
+    return newItem;
+  })
+
+  return res
 }
 
 // 转换筛选条件
@@ -206,7 +244,7 @@ function getWorkDateList(
 
     const firstTimeStr = item[firstTimeField]
     const lastTimeStr = item[lastTimeField]
-    const strictRealWorkTime = (firstTimeStr !== '--' && firstTimeStr && lastTimeStr !== '--' && lastTimeStr) ? calculateHoursBetween(firstTimeStr, lastTimeStr) : undefined
+    const strictRealWorkTime = (firstTimeStr && lastTimeStr) ? calculateHoursBetween(firstTimeStr, lastTimeStr) : undefined
 
 
     const realWorkTime = (!strictTime ? numberify(item[workTimeField]) : strictRealWorkTime) ?? standardWorkTime;
@@ -218,60 +256,13 @@ function getWorkDateList(
       standardHours: standardWorkTime,
       diffHours: realWorkTime - standardWorkTime,
       markedTimes,
+      firstTime: firstTimeStr,
+      lastTime: lastTimeStr,
       isWorkday,
     };
   });
 
   return workDateList.reverse()
-}
-
-// 计算工作时长详情
-function getWorkTimeDetail(
-  workTimeList: any[],
-  filters: Record<string, ((value: any) => boolean) | undefined>
-) {
-  const checkedWorkTimeList = workTimeList.filter((item) =>
-    filterItemWithFilters(item, filters)
-  );
-
-  const standardWorkTimeDaily = numberify(checkedWorkTimeList[0]?.[standardWorkTimeField]) ?? 9;
-
-  const workDays = checkedWorkTimeList.length;
-  const standardWorkTimeTotal = standardWorkTimeDaily * workDays;
-
-  const workDateList = checkedWorkTimeList.map((item) => {
-    const defaultWorkTime = numberify(item[timesField]) === 2 ? 0 : standardWorkTimeDaily;
-    const realWorkTime = numberify(item[workTimeField]) ?? defaultWorkTime;
-    return {
-      date: item[dateField],
-      hours: realWorkTime,
-      diffHours: realWorkTime - standardWorkTimeDaily,
-    };
-  });
-
-  const workTimeTotal = Number(
-    workDateList
-      .map((item) => item.hours)
-      .reduce((pre, cur) => pre + cur, 0)
-      .toFixed(2)
-  );
-
-  const workTimeDaily = Number((workTimeTotal / workDays).toFixed(2));
-  const overWorkTime = Number(
-    (workTimeTotal - standardWorkTimeTotal).toFixed(2)
-  );
-
-  return {
-    weeks: workDateList.reverse(),
-    detail: {
-      工作天数: workDays,
-      [`每日${standardWorkTimeField}`]: standardWorkTimeDaily,
-      [`平均${workTimeField}`]: workTimeDaily,
-      [`累计${standardWorkTimeField}`]: standardWorkTimeTotal,
-      [`累计${workTimeField}`]: workTimeTotal,
-      [`累计${workTimeField}差额`]: overWorkTime,
-    },
-  };
 }
 
 export interface WorkDate {
@@ -281,6 +272,8 @@ export interface WorkDate {
   standardHours: number;
   diffHours: number;
   markedTimes: number;
+  firstTime?: string;
+  lastTime?: string;
   isWorkday?: boolean;
 };
 export interface ParseRes {

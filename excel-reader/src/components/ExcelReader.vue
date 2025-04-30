@@ -91,7 +91,7 @@ import { fromWorkDateListToTimeResult, parseExcelFile, type ParseRes, type WorkD
 import { computed, ref, watch } from "vue";
 import SCalender from "./SCalender.vue";
 import { useLocalStorage } from "@vueuse/core";
-import type { FileItem } from "@arco-design/web-vue";
+import { type FileItem, Message } from "@arco-design/web-vue";
 
 const DEFAULT_STANDARD_WORK_TIME = 9
 
@@ -156,7 +156,7 @@ const timesOptions = [
   { label: "2次", value: "2" },
 ];
 
-const useStrictTime = useLocalStorage("___use_strict_time", false);
+const useStrictTime = useLocalStorage("___use_strict_time", true);
 
 // 上传文件逻辑
 const onFileChange = (files: FileItem[]) => {
@@ -166,7 +166,7 @@ const onFileChange = (files: FileItem[]) => {
 // 处理上传的文件
 const processFile = async () => {
   if (!fileList.value.length) {
-    alert("请先上传文件");
+    Message.error("请先上传文件");
     return;
   }
 
@@ -175,14 +175,15 @@ const processFile = async () => {
     try {
       const data = await parseExcelFile(file, filters.value, DEFAULT_STANDARD_WORK_TIME, useStrictTime.value);
       workDates.value = data;
-    } catch (error) {
+    } catch (error: any) {
       console.error("解析失败:", error);
+      Message.error("解析失败:" + error.message)
     }
   }
 };
 
 const resetFilters = () => {
-  filters.value = { duty: "非休息", checkedStatus: "正常", times: "2" };
+  filters.value = { duty: "非休息", checkedStatus: "非请假休息一律统计", times: "" };
 };
 </script>
 
